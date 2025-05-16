@@ -62,3 +62,23 @@ class ConfidenceThresholdEvaluator(BaseEstimator):
             return ['score']
         else:
             return []
+        
+    def estimate(self, X):
+        """
+        Returns the predicted probabilities for samples with confidence >= threshold.
+
+        Parameters:
+        -----------
+        X : array-like
+            Test features.
+
+        Returns:
+        --------
+        array-like
+            Predicted probabilities for samples meeting the confidence threshold.
+        """
+        proba = self.estimator.predict_proba(X)
+        confidence = proba.max(axis=1)
+        mask = confidence >= self.threshold
+        return proba[mask]
+
