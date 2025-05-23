@@ -1,30 +1,24 @@
-import pandas as pd
-import numpy as np
 import os
-
+import pandas as pd
 from sklearn.pipeline import make_pipeline
 from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
-from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import StandardScaler
 
 from evaluators.confidence import ConfidenceThresholdEvaluator
 
 def load_dataset(path):
     df = pd.read_csv(path)
-    y = df["Alzheimer"]
     X = df.drop(columns=["Alzheimer"])
+    y = df["Alzheimer"]
     return X, y
 
-def test_estimate_cross_dataset(train_file, test_file):
-    train_path = os.path.join("datasets", train_file)
-    test_path = os.path.join("datasets", test_file)
-
-    assert os.path.exists(train_path), f"Train dataset not found: {train_path}"
-    assert os.path.exists(test_path), f"Test dataset not found: {test_path}"
+def test_estimate(train_csv, test_csv, threshold=0.7):
+    train_path = os.path.join("datasets", train_csv)
+    test_path = os.path.join("datasets", test_csv)
 
     X_train, y_train = load_dataset(train_path)
-    X_test, y_test = load_dataset(test_path)
+    X_test, _ = load_dataset(test_path)
 
     model = make_pipeline(
         SimpleImputer(strategy="mean"),
@@ -32,19 +26,19 @@ def test_estimate_cross_dataset(train_file, test_file):
         LogisticRegression(max_iter=1000)
     )
 
-    threshold = 0.7
     evaluator = ConfidenceThresholdEvaluator(
         estimator=model,
-        scorer={"acc": accuracy_score},
-        threshold=threshold
+        threshold=threshold,
+        limit_to_top_class=True
     )
 
     evaluator.fit(X_train, y_train)
-    estimates = evaluator.estimate(X_test)
 
-    print(f"Estimate shape from model trained on '{train_file}' and tested on '{test_file}':", estimates.shape)
-    print("First few estimated probabilities:\n", estimates[:5])
-    print("\n")
+    estimate_result = evaluator.estimate(X_test)
 
-test_estimate_cross_dataset('geriatria-controle-alzheimerLabel.csv', 'neurologia-controle-alzheimerLabel.csv')
-test_estimate_cross_dataset('neurologia-controle-alzheimerLabel.csv', 'geriatria-controle-alzheimerLabel.csv')
+    print(f"Estimate from model trained on '{train_csv}' and tested on '{test_csv}':")
+    print(estimate_result)
+    print("-" * 60)
+
+test_estimate("geriatria-controle-alzheimerLabel.csv", "neurologia-controle-alzheimerLabel.csv")
+test_estimate("neurologia-controle-alzheimerLabel.csv", "geriatria-controle-alzheimerLabel.csv")
