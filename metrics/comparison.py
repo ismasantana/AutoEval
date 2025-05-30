@@ -1,7 +1,5 @@
 from sklearn.metrics import accuracy_score, mean_absolute_error
 
-from ..evaluators.confidence import ConfidenceThresholdEvaluator
-
 def score_error(real_scores: dict, estimated_scores: dict, comparator: dict = mean_absolute_error) -> dict:
     """
     Compares estimated and real scores using a user-defined comparison function.

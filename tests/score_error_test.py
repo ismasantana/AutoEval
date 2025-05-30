@@ -27,8 +27,12 @@
 # compare_real_estimated_cross_accuracy(X_neuro, y_neuro, X_geri, y_geri, evaluator)
 
 import pytest
+import sys
+import os
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from metrics.comparison import score_error
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 def test_score_error_with_callable():
     real = {"acc": 0.8, "f1": 0.75}

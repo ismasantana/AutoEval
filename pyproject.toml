@@ -1,0 +1,18 @@
+[project]
+name = "autoeval"
+version = "0.1.0"
+description = "AutoEval: Automatic model evaluation tools"
+authors = [{ name = "Seu Nome", email = "seu@email.com" }]
+readme = "README.md"
+license = {text = "MIT"}
+dependencies = [
+    "numpy",
+    "scikit-learn",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
