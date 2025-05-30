@@ -32,74 +32,36 @@ class ConfidenceThresholdEvaluator(BaseEstimator):
         self.estimator.fit(X, y)
         return self
 
-    def score(self, X, y):
-        """
-        Evaluates the model using the specified scorer(s) on the data above the confidence threshold.
-        
-        Parameters:
-        -----------
-        X : array-like
-            Feature data.
-        y : array-like
-            True labels.
-
-        Returns:
-        --------
-        dict
-            Dictionary of scores for each scorer.
-        """
-        conf, mask = self._get_confidences_and_mask(X)
-        if not np.any(mask):
+    def estimate(self, X):
+        conf, correct = self._get_confidences_and_correct(X)
+        if not np.any(correct):
             return {name: 0.0 for name in self._get_scorer_names()}
 
-        y_pred = self.estimator.predict(X[mask])
-        y_true = y[mask]
-
+        y_pred = self.estimator.predict(X)
+        y_estimated = [y_pred[i] if c == 1 else (y_pred[i]+1)%2 for i, c in enumerate(correct)]
+        y_estimated = [int(y) for y in y_estimated]
+        print(y_estimated, len(y_estimated), "\n")
+        print(y_pred, len(y_pred))
+        
         if isinstance(self.scorer, dict):
             return {
-                name: func(y_true, y_pred)
+                name: func(y_estimated, y_pred)
                 for name, func in self.scorer.items()
             }
         elif isinstance(self.scorer, Callable):
-            return {'score': self.scorer(y_true, y_pred)}
+            return {'score': self.scorer(y_estimated, y_pred)}
         else:
             raise ValueError("'scorer' must be a callable or a dict of callables.")
 
-
-    def estimate(self, X):
-        """
-        Estimates the model's average confidence for predictions above the threshold.
-
-        This method is useful for understanding how confident the model is in its
-        high-confidence predictions, especially when true labels are unavailable.
-
-        Parameters:
-        -----------
-        X : array-like of shape (n_samples, n_features)
-            Unlabeled data.
-
-        Returns:
-        --------
-        dict
-            Dictionary containing the average confidence for each score name.
-            (All values will be the same — the average confidence — repeated for compatibility.)
-        """
-        conf, mask = self._get_confidences_and_mask(X)
-        if not np.any(mask):
-            return {name: 0.0 for name in self._get_scorer_names()}
-
-        avg_confidence = np.mean(conf[mask])
-        return {name: avg_confidence for name in self._get_scorer_names()}
-
-    def _get_confidences_and_mask(self, X):
+    def _get_confidences_and_correct(self, X):
         """
         Computes confidence scores and applies the confidence threshold.
 
         Returns:
         --------
-        tuple (confidences, mask)
+        tuple (confidences, correct)
             confidences: array of confidence scores
-            mask: boolean array where confidence >= threshold
+            correct: boolean array where confidence >= threshold
         """
         if hasattr(self.estimator, "predict_proba"):
             probas = self.estimator.predict_proba(X)
@@ -110,8 +72,8 @@ class ConfidenceThresholdEvaluator(BaseEstimator):
         else:
             raise ValueError("The estimator must implement predict_proba or decision_function.")
         
-        mask = conf >= self.threshold
-        return conf, mask
+        correct = conf >= self.threshold
+        return conf, correct
 
         
     def _get_scorer_names(self):

@@ -1,5 +1,6 @@
 from sklearn.datasets import make_classification
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, f1_score, mean_absolute_error
 from sklearn.model_selection import train_test_split
 
@@ -11,6 +12,7 @@ X, y = make_classification(n_samples=200, n_features=10, random_state=42)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
     
 model = LogisticRegression()
+model2 = RandomForestClassifier()
 threshold = 0.7
 evaluator = ConfidenceThresholdEvaluator(
     estimator=model,
@@ -18,16 +20,23 @@ evaluator = ConfidenceThresholdEvaluator(
     threshold=threshold
 )
 
+evaluator2 = ConfidenceThresholdEvaluator(
+    estimator=model2,
+    scorer={'acc': accuracy_score, 'f1': f1_score},
+    threshold=threshold
+)
+
 evaluator.fit(X_train, y_train)
-result = evaluator.score(X_test, y_test)
-print(result)
+result = evaluator.estimate(X_test)
+print("modelo 1", result)
+
+evaluator2.fit(X_train, y_train)
+result2 = evaluator2.estimate(X_test)
+print("modelo 2", result2)
 
 proba = model.predict_proba(X_test)
 confidence = proba.max(axis=1)
 mask = confidence >= threshold
-
-mae = mean_absolute_error(y_test[mask], proba[mask][:, 1])
-print(f"MAE: {mae}\n")
 
 # TESTE 2
 X, y = make_classification(n_samples=150, n_features=8, random_state=42)
@@ -44,12 +53,9 @@ evaluator = ConfidenceThresholdEvaluator(
 )
 
 evaluator.fit(X_train, y_train)
-result = evaluator.score(X_test, y_test)
+result = evaluator.estimate(X_test)
 print(result)
 
 proba = model.predict_proba(X_test)
 confidence = proba.max(axis=1)
 mask = confidence >= threshold
-
-mae = mean_absolute_error(y_test[mask], proba[mask][:, 1])
-print(f"MAE: {mae}")
