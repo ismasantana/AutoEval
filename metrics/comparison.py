@@ -1,6 +1,6 @@
 from sklearn.metrics import accuracy_score, mean_absolute_error
 
-def score_error(real_scores: dict, estimated_scores: dict, comparator: dict = mean_absolute_error) -> dict:
+def score_error(real_scores, estimated_scores, comparator=mean_absolute_error, verbose=False):
     """
     Compares estimated and real scores using a user-defined comparison function.
 
@@ -18,20 +18,27 @@ def score_error(real_scores: dict, estimated_scores: dict, comparator: dict = me
     dict
         Dictionary with comparison results for each common scorer.
     """
+    result = {}
+
     if callable(comparator):
-        return {
-            metric: comparator([real_scores[metric]], [estimated_scores[metric]])
-            for metric in real_scores
-            if metric in estimated_scores
-        }
+        for metric in real_scores:
+            if metric in estimated_scores:
+                error = comparator([real_scores[metric]], [estimated_scores[metric]])
+                result[metric] = error
+                if verbose:
+                    print(f"[{metric}] Real: {real_scores[metric]}, Estimated: {estimated_scores[metric]}, Error: {error}")
+                    
     elif isinstance(comparator, dict):
-        return {
-            metric: comparator[metric]([real_scores[metric]], [estimated_scores[metric]])
-            for metric in real_scores
-            if metric in estimated_scores and metric in comparator
-        }
+        for metric in real_scores:
+            if metric in estimated_scores and metric in comparator:
+                error = comparator[metric]([real_scores[metric]], [estimated_scores[metric]])
+                result[metric] = error
+                if verbose:
+                    print(f"[{metric}] Real: {real_scores[metric]}, Estimated: {estimated_scores[metric]}, Error: {error}")
     else:
         raise ValueError("Comparator must be a callable or a dict of callables.")
+
+    return result
     
 # def compare_real_estimated_cross_accuracy(train_X, train_y, test_X, test_y, evaluator: ConfidenceThresholdEvaluator):
 #     evaluator.fit(train_X, train_y)

@@ -1,7 +1,6 @@
 from sklearn.base import BaseEstimator
 from sklearn.metrics import accuracy_score
 import numpy as np
-from collections.abc import Callable # ALTERAR PARA CALLABLE()
 
 class ConfidenceThresholdEvaluator(BaseEstimator):
     """
@@ -21,7 +20,7 @@ class ConfidenceThresholdEvaluator(BaseEstimator):
             If True, prints additional information during evaluation.
         """
     
-    def __init__(self, estimator, scorer=accuracy_score, threshold=0.8, limit_to_top_class=True, verbose=True):
+    def __init__(self, estimator, scorer=accuracy_score, threshold=0.8, limit_to_top_class=True, verbose=False):
         self.estimator = estimator
         self.scorer = scorer
         self.threshold = threshold
@@ -33,23 +32,49 @@ class ConfidenceThresholdEvaluator(BaseEstimator):
         return self
 
     def estimate(self, X):
+        '''
+        Estimates scores based on the confidence threshold.
+        Parameters:
+        -----------
+        X : array-like, shape (n_samples, n_features)
+            Input data for which to estimate scores.
+        Returns:
+        --------
+        dict
+        Dictionary with estimated scores for each scorer.
+        '''
         conf, correct = self._get_confidences_and_correct(X)
+        
+        if self.verbose:
+            print("[Verbose] Confidences:", conf)
+            print("[Verbose] Passed threshold:", correct)
+
         if not np.any(correct):
+            if self.verbose:
+                print("[Verbose] No predictions passed the threshold.")
             return {name: 0.0 for name in self._get_scorer_names()}
 
         y_pred = self.estimator.predict(X)
         y_estimated = [y_pred[i] if c == 1 else (y_pred[i]+1)%2 for i, c in enumerate(correct)]
         y_estimated = [int(y) for y in y_estimated]
-        print(y_estimated, len(y_estimated), "\n")
-        print(y_pred, len(y_pred))
-        
+
+        if self.verbose:
+            print("[Verbose] y_pred:", y_pred)
+            print("[Verbose] y_estimated:", y_estimated)
+
         if isinstance(self.scorer, dict):
-            return {
+            scores = {
                 name: func(y_estimated, y_pred)
                 for name, func in self.scorer.items()
             }
-        elif isinstance(self.scorer, Callable):
-            return {'score': self.scorer(y_estimated, y_pred)}
+            if self.verbose:
+                print("[Verbose] Estimated scores:", scores)
+            return scores
+        elif callable(self.scorer):
+            score = self.scorer(y_estimated, y_pred)
+            if self.verbose:
+                print("[Verbose] Estimated score:", score)
+            return {'score': score}
         else:
             raise ValueError("'scorer' must be a callable or a dict of callables.")
 
@@ -91,7 +116,7 @@ class ConfidenceThresholdEvaluator(BaseEstimator):
         """
         if isinstance(self.scorer, dict):
             return list(self.scorer.keys())
-        elif isinstance(self.scorer, Callable):
+        elif callable(self.scorer):
             return ['score']
         else:
             return []
