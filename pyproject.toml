@@ -1,18 +1,30 @@
 [project]
-name = "autoeval"
+name = "scikit-eval"
 version = "0.1.0"
-description = "AutoEval: Automatic model evaluation tools"
-authors = [{ name = "Seu Nome", email = "seu@email.com" }]
+description = "AutoEval library for automatic evaluation of supervised models"
+authors = [
+    {name = "Lucas Santos Rodeigues", email = "lucasantos2003@gmail.com"},
+    {name = "Ismael Santana Silva", email = "ismasantana@gmail.com"}
+]
+license = "MIT"
 readme = "README.md"
-license = {text = "MIT"}
+requires-python = ">=3.8"
 dependencies = [
+    "scikit-learn>=1.0",
     "numpy",
-    "scikit-learn",
+    "pandas",
+    "pytest"
 ]
 
+[project.urls]
+"Homepage" = "https://github.com/ismasantana/AutoEval"
+
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+package-dir = {"" = "skeval"}
+
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["skeval"]
